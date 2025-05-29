@@ -1,5 +1,5 @@
-github.com/Srlion/glua v0.3.1 h1:ZFD+93k1Xs/p5WmHX507GZasfr3xCVIQ3D28WbgBewY=
-github.com/Srlion/glua v0.3.1/go.mod h1:FfPnfVkFXlLiA3BbmFpxU+8t4RnF7inNP+YlO/4PAwQ=
+github.com/Srlion/glua v0.2.16 h1:nNzDrbtq0eZDyWlXaiACYoGv7bUWpH864gyOa6XgHjA=
+github.com/Srlion/glua v0.2.16/go.mod h1:GC6Z3cMHURrpGKHPvhr6U2x2GwuqKMzQWXwfx8l3qMA=
 github.com/Srlion/safereg v0.0.0-20250123202343-2c2b3bd18282 h1:kgiuDgi2/zjtkeevju0Pt12JYX4tn3NZx9+/Q2HRyq4=
 github.com/Srlion/safereg v0.0.0-20250123202343-2c2b3bd18282/go.mod h1:qPFgON4MYNLSfR/bgBXJYGyIUJ5lFLJkyB9Hn9r/c0Q=
 golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 h1:y5zboxd6LQAqYIhHnB48p0ByQ/GnQx2BE33L8BOHQkI=
