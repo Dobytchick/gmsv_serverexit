@@ -1,0 +1,127 @@
+name: building module
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - arch: 32
+            name: win32
+            mingw_path: C:/mingw32/bin
+          - arch: 64
+            name: win64
+            mingw_path: C:/mingw64/bin
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Download MinGW
+        shell: pwsh
+        run: |
+          # Create directories
+          New-Item -ItemType Directory -Force -Path C:/mingw32
+          New-Item -ItemType Directory -Force -Path C:/mingw64
+          
+          # Download MinGW
+          $url32 = "https://github.com/brechtsanders/winlibs_mingw/releases/download/13.2.0-16.0.6-11.0.0-ucrt-r1/winlibs-i686-posix-dwarf-gcc-13.2.0-mingw-w64ucrt-11.0.0-r1.zip"
+          $url64 = "https://github.com/brechtsanders/winlibs_mingw/releases/download/13.2.0-16.0.6-11.0.0-ucrt-r1/winlibs-x86_64-posix-seh-gcc-13.2.0-mingw-w64ucrt-11.0.0-r1.zip"
+          
+          # Download and extract 32-bit
+          Invoke-WebRequest -Uri $url32 -OutFile mingw32.zip
+          Expand-Archive -Path mingw32.zip -DestinationPath C:/mingw32 -Force
+          
+          # Download and extract 64-bit
+          Invoke-WebRequest -Uri $url64 -OutFile mingw64.zip
+          Expand-Archive -Path mingw64.zip -DestinationPath C:/mingw64 -Force
+
+      - name: Build Windows module
+        shell: pwsh
+        env:
+          PATH: ${{ matrix.mingw_path }};${{ env.PATH }}
+        run: |
+          python go_build.py --name serverexit --arch ${{ matrix.arch }}
+          ls -Force bin/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gmsv_serverexit_${{ matrix.name }}
+          path: bin/gmsv_serverexit_${{ matrix.name }}.dll
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: 32
+            name: linux
+          - arch: 64
+            name: linux64
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Install dependencies
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt update
+        sudo apt install -y gcc-multilib g++-multilib python3 python3-pip
+
+    - name: Build gLua module
+      run: |
+        python3 go_build.py --name serverexit --arch ${{ matrix.arch }}
+        ls -lah bin/
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: gmsv_serverexit_${{ matrix.name }}
+        path: bin/gmsv_serverexit_${{ matrix.name }}.dll
+
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            artifacts/gmsv_serverexit_win32/gmsv_serverexit_win32.dll
+            artifacts/gmsv_serverexit_win64/gmsv_serverexit_win64.dll
+            artifacts/gmsv_serverexit_linux/gmsv_serverexit_linux.dll
+            artifacts/gmsv_serverexit_linux64/gmsv_serverexit_linux64.dll
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
