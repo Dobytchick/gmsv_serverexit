@@ -12,4 +12,5 @@ A module for Garry's Mod that allows you to safely shut down the server from Lua
 server.exit()
 ```
 
+
 Before shutdown, the Lua [ShutDown](https://wiki.facepunch.com/gmod/GM:ShutDown) hook will be called for your cleanup code.
