@@ -3,7 +3,6 @@ import argparse
 import os
 import sys
 import subprocess
-import multiprocessing
 
 def main():
     # ----------------------------------------
@@ -57,7 +56,7 @@ def main():
         "-p", "--maxprocs",
         type=int,
         default=DEFAULT_MAXPROCS,
-        help="Maximum parallel processes. Default: number of CPU cores"
+        help="Maximum parallel processes. Default: 1"
     )
     parser.add_argument(
         "-o", "--outdir",
@@ -110,7 +109,6 @@ def main():
     # ----------------------------------------
     os.environ["GOOS"] = "windows" if os.name == 'nt' else "linux"
     os.environ["CGO_ENABLED"] = "1"
-    os.environ["GOAMD64"] = "v3"
     os.environ["GOMAXPROCS"] = str(maxprocs)
 
     # Set flags based on OS
@@ -153,7 +151,6 @@ def main():
     # ----------------------------------------
     # Build Process
     # ----------------------------------------
-    os.makedirs("bin", exist_ok=True)
     build_cmd = [
         "go", "build",
         "-buildmode=c-shared",

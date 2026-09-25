@@ -1,12 +1,15 @@
-name: building module
+name: Build module
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-windows:
@@ -22,17 +25,17 @@ jobs:
             mingw_path: C:/mingw64/bin
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.24'
+          go-version-file: go.mod
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
-          python-version: '3.9'
+          python-version: '3.11'
 
       - name: Download MinGW
         shell: pwsh
@@ -55,14 +58,12 @@ jobs:
 
       - name: Build Windows module
         shell: pwsh
-        env:
-          PATH: ${{ matrix.mingw_path }};${{ env.PATH }}
         run: |
           python go_build.py --name serverexit --arch ${{ matrix.arch }}
           ls -Force bin/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gmsv_serverexit_${{ matrix.name }}
           path: bin/gmsv_serverexit_${{ matrix.name }}.dll
@@ -79,12 +80,12 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
-        go-version: '1.24'
+        go-version-file: go.mod
 
     - name: Install dependencies
       run: |
@@ -98,23 +99,27 @@ jobs:
         ls -lah bin/
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: gmsv_serverexit_${{ matrix.name }}
         path: bin/gmsv_serverexit_${{ matrix.name }}.dll
 
   create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
+      - uses: actions/checkout@v7
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           files: |
@@ -122,6 +127,7 @@ jobs:
             artifacts/gmsv_serverexit_win64/gmsv_serverexit_win64.dll
             artifacts/gmsv_serverexit_linux/gmsv_serverexit_linux.dll
             artifacts/gmsv_serverexit_linux64/gmsv_serverexit_linux64.dll
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
